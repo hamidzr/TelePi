@@ -6,7 +6,6 @@ import {
   createAgentSessionFromServices,
   createAgentSessionRuntime,
   createAgentSessionServices,
-  createCodingTools,
   getAgentDir,
   ModelRegistry,
   SessionManager,
@@ -135,13 +134,15 @@ function patchBashTimeout(session: AgentSession): void {
       description:
         tool.description +
         ` Commands time out after ${DEFAULT_BASH_TIMEOUT_SECONDS} seconds by default. Pass a longer timeout for slow commands (e.g. npm install, test suites).`,
-      execute: (toolCallId: string, args: { command: string; timeout?: number }, signal?: AbortSignal, onUpdate?: any) =>
-        originalExecute(
+      execute: (toolCallId: string, params: unknown, signal?: AbortSignal, onUpdate?: any) => {
+        const args = params as { command: string; timeout?: number };
+        return originalExecute(
           toolCallId,
           { ...args, timeout: args.timeout ?? DEFAULT_BASH_TIMEOUT_SECONDS },
           signal,
           onUpdate,
-        ),
+        );
+      },
     };
   });
   session.agent.state.tools = patched;
@@ -230,7 +231,6 @@ async function createPiSessionHandle(
       model,
       thinkingLevel,
       scopedModels,
-      tools: createCodingTools(cwd),
     });
     getSlashCommands = () => result.extensionsResult.runtime.getCommands?.() ?? [];
     patchBashTimeout(result.session);
@@ -651,7 +651,7 @@ export class PiSessionService {
 
     const previousSession = this.getSession();
     const previousWorkspace = this.currentWorkspace;
-    const result = await this.getHandle().runtime.switchSession(runtimeSessionPath, effectiveWorkspace);
+    const result = await this.getHandle().runtime.switchSession(runtimeSessionPath, { cwdOverride: effectiveWorkspace });
     await this.rebindAfterRuntimeSessionReplacement(previousSession, previousWorkspace);
     return {
       ...this.getInfo(),

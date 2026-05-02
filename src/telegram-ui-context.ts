@@ -121,5 +121,13 @@ export function createTelegramUIContext(options: CreateTelegramUIContextOptions)
       return false;
     },
     setToolsExpanded() {},
+    setWorkingVisible() {},
+    setWorkingIndicator() {},
+    addAutocompleteProvider() {
+      unsupported("addAutocompleteProvider");
+    },
+    getEditorComponent() {
+      return undefined;
+    },
   };
 }
