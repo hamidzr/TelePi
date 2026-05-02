@@ -1,0 +1,14 @@
+# user-local extra mounts - copy this to docker-compose.override.yml and edit.
+# docker-compose.override.yml is gitignored; changes here never get committed.
+#
+# Compose merges this file with docker-compose.yml automatically on
+# `docker compose up/build`. No flags needed.
+#
+# Mount at the same absolute path as the host so session cwds resolve
+# inside the container without any path remapping.
+
+services:
+  telepi:
+    volumes:
+      # - /home/you/projects:/home/you/projects:rw
+      # - /home/you/code:/home/you/code:ro

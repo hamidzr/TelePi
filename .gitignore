@@ -8,6 +8,9 @@ artifacts/
 # Environment / secrets
 .env
 
+# User-local extra mounts (never commit)
+docker-compose.override.yml
+
 # Runtime workspace (Docker mount)
 workspace/
 
