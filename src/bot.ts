@@ -938,6 +938,16 @@ export function createBot(config: TelePiConfig, sessionRegistry: PiSessionRegist
     await handleUserPrompt(ctx, target, userText);
   });
 
+  bot.on(["message:photo", "message:document", "message:sticker", "message:video", "message:animation"], async (ctx) => {
+    const target = getTelegramTarget(ctx);
+    if (!target) {
+      return;
+    }
+    await safeReply(ctx, escapeHTML("Image/media attachments are not supported as context. Send text only."), {
+      fallbackText: "Image/media attachments are not supported as context. Send text only.",
+    }, target);
+  });
+
   bot.on(["message:voice", "message:audio"], async (ctx) => {
     const target = getTelegramTarget(ctx);
     if (!target) {
