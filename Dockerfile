@@ -4,7 +4,7 @@ FROM node:22-alpine
 ARG USER_UID=1000
 ARG USER_GID=1000
 
-RUN apk add --no-cache git bash
+RUN apk add --no-cache git bash openssh-client
 
 WORKDIR /app
 
@@ -22,7 +22,8 @@ RUN existing_user=$(getent passwd ${USER_UID} | cut -d: -f1 || true); \
     [ -n "$existing_group" ] && delgroup "$existing_group" 2>/dev/null || true; \
     addgroup -g ${USER_GID} telepi \
     && adduser -D -u ${USER_UID} -G telepi telepi \
-    && mkdir -p /workspace /home/telepi/.pi/agent /home/telepi/.npm-global \
+    && mkdir -p /workspace /home/telepi/.pi/agent /home/telepi/.npm-global /home/telepi/.ssh \
+    && ssh-keyscan github.com >> /home/telepi/.ssh/known_hosts 2>/dev/null \
     && chown -R telepi:telepi /workspace /home/telepi
 
 USER telepi

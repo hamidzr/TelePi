@@ -6,6 +6,8 @@ services:
         USER_UID: "${HOST_UID:-1000}"
         USER_GID: "${HOST_GID:-1000}"
     env_file: .env
+    environment:
+      SSH_AUTH_SOCK: /ssh-agent
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     volumes:
       # pi agent config (auth, settings) - read-only
@@ -17,6 +19,10 @@ services:
       - ${TELEPI_WORKSPACE:-./workspace}:/workspace:rw
       # npm global prefix persisted across restarts (for pi extensions)
       - npm-global:/home/telepi/.npm-global
+      # ssh agent socket forwarding for git push (key never enters container)
+      - ${SSH_AUTH_SOCK}:/ssh-agent:ro
+      # git identity
+      - ${HOME}/.gitconfig:/home/telepi/.gitconfig:ro
     cap_drop:
       - ALL
     security_opt:
