@@ -10,6 +10,14 @@ export interface ScopedModelOption {
 
 const THINKING_LEVELS = new Set<ThinkingLevel>(["minimal", "low", "medium", "high", "xhigh"]);
 
+// track patterns already warned to avoid repeating on each session creation
+const _warnedPatterns = new Set<string>();
+function warnOnce(pattern: string): void {
+  if (_warnedPatterns.has(pattern)) return;
+  _warnedPatterns.add(pattern);
+  console.warn(`Warning: No models match pattern "${pattern}"`);
+}
+
 export async function resolveScopedModels(
   settingsManager: SettingsManager,
   modelRegistry: ModelRegistry,
@@ -32,7 +40,7 @@ export async function resolveScopedModels(
       const { modelPattern, thinkingLevel } = splitThinkingLevel(pattern);
       const matches = availableModels.filter((model) => matchesPattern(modelPattern, model));
       if (matches.length === 0) {
-        console.warn(`Warning: No models match pattern "${pattern}"`);
+        warnOnce(pattern);
         continue;
       }
 
@@ -45,7 +53,7 @@ export async function resolveScopedModels(
     const { modelPattern, thinkingLevel } = splitThinkingLevel(pattern);
     const model = findModel(modelPattern, availableModels);
     if (!model) {
-      console.warn(`Warning: No models match pattern "${pattern}"`);
+      warnOnce(pattern);
       continue;
     }
 

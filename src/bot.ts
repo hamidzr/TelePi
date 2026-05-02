@@ -829,31 +829,6 @@ export function createBot(config: TelePiConfig, sessionRegistry: PiSessionRegist
     }
   });
 
-  bot.callbackQuery("model_show_all", async (ctx) => {
-    const target = getTelegramTarget(ctx);
-    const messageId = ctx.callbackQuery.message?.message_id;
-
-    if (!target || !messageId) {
-      return;
-    }
-
-    const contextKey = getContextKey(target);
-    const piSession = getExistingSession(target);
-    const models = pendingModelPicks.get(contextKey);
-    if (!models || models.length === 0 || !piSession) {
-      await ctx.answerCallbackQuery({ text: "Expired, run /model again" });
-      return;
-    }
-
-    if (isBusy(target)) {
-      await ctx.answerCallbackQuery({ text: "Wait for the current prompt to finish" });
-      return;
-    }
-
-    await ctx.answerCallbackQuery({ text: "Loading all models..." });
-    await renderModelPicker(ctx, target, piSession, { showAll: true, messageId });
-  });
-
   bot.callbackQuery(/^model_(\d+)$/, async (ctx) => {
     const target = getTelegramTarget(ctx);
     const messageId = ctx.callbackQuery.message?.message_id;

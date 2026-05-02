@@ -44,12 +44,11 @@ export function createModelCommandHandlers(deps: {
     ctx: Context,
     target: PiSessionContext,
     piSession: PiSessionService,
-    options?: { showAll?: boolean; messageId?: number },
+    options?: { messageId?: number },
   ): Promise<void> => {
     const contextKey = getContextKey(target);
-    const showAll = options?.showAll ?? false;
     const messageId = options?.messageId;
-    const models = await piSession.listModels(showAll);
+    const models = await piSession.listModels(false);
 
     if (models.length === 0) {
       const message = "No models available.";
@@ -74,25 +73,15 @@ export function createModelCommandHandlers(deps: {
     });
     pendingModelButtons.set(contextKey, modelButtons);
 
-    let extraButtons: KeyboardItem[] = [];
-    if (!showAll) {
-      const allModels = await piSession.listModels(true);
-      if (allModels.length > models.length) {
-        extraButtons = [{ label: "Show all models", callbackData: "model_show_all" }];
-      }
-    }
-    pendingModelExtraButtons.set(contextKey, extraButtons);
+    pendingModelExtraButtons.set(contextKey, []);
 
     const info = piSession.getInfo();
     const currentModelText = info.model ? `Current: ${info.model}` : "No model selected";
-    const scopeHint = extraButtons.length > 0 ? "Showing the current Pi model scope." : undefined;
-    const html = ["<b>Select a model</b>", escapeHTML(currentModelText), scopeHint ? `<i>${escapeHTML(scopeHint)}</i>` : undefined]
-      .filter((line): line is string => line !== undefined)
+    const html = ["<b>Select a model</b>", escapeHTML(currentModelText)]
       .join("\n");
-    const fallbackText = ["Select a model", currentModelText, scopeHint]
-      .filter((line): line is string => line !== undefined)
+    const fallbackText = ["Select a model", currentModelText]
       .join("\n");
-    const replyMarkup = buildKeyboard(modelButtons, 0, "model", extraButtons);
+    const replyMarkup = buildKeyboard(modelButtons, 0, "model");
 
     if (messageId) {
       await safeEditMessage(target, messageId, html, { fallbackText, replyMarkup });
