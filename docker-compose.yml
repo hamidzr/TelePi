@@ -1,15 +1,22 @@
 services:
   telepi:
-    build: .
+    build:
+      context: .
+      args:
+        USER_UID: "${HOST_UID:-1000}"
+        USER_GID: "${HOST_GID:-1000}"
     env_file: .env
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     volumes:
-      # Pi agent config (auth, settings) — read-only
+      # pi agent config (auth, settings) - read-only
       - ${HOME}/.pi/agent/auth.json:/home/telepi/.pi/agent/auth.json:ro
       - ${HOME}/.pi/agent/settings.json:/home/telepi/.pi/agent/settings.json:ro
-      # Sessions — read-write (bot appends to session files)
+      # sessions - read-write (bot appends to session files)
       - ${HOME}/.pi/agent/sessions:/home/telepi/.pi/agent/sessions:rw
-      # Workspace — read-write, scoped working directory for the agent
-      - ./workspace:/workspace:rw
+      # workspace - read-write, scoped working directory for the agent
+      - ${TELEPI_WORKSPACE:-./workspace}:/workspace:rw
+      # npm global prefix persisted across restarts (for pi extensions)
+      - npm-global:/home/telepi/.npm-global
     cap_drop:
       - ALL
     security_opt:
@@ -20,3 +27,18 @@ services:
           memory: 2G
           cpus: "2.0"
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    healthcheck:
+      # bot sets up polling; if the process is alive the bot is running
+      test: ["CMD-SHELL", "kill -0 1 2>/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  npm-global:

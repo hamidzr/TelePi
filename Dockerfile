@@ -1,5 +1,9 @@
 FROM node:22-alpine
 
+# match host UID/GID so bind-mounted directories are writable
+ARG USER_UID=1000
+ARG USER_GID=1000
+
 RUN apk add --no-cache git bash
 
 WORKDIR /app
@@ -10,10 +14,16 @@ RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 COPY . .
 RUN npm run build
 
-# Create non-root user and workspace
-RUN adduser -D -u 1001 telepi \
-  && mkdir -p /workspace /home/telepi/.pi/agent /home/telepi/.npm-global \
-  && chown -R telepi:telepi /workspace /home/telepi
+# create non-root user whose UID/GID matches the host user (bind-mount writes);
+# node:alpine ships a 'node' user at UID/GID 1000 - remove it first if it conflicts
+RUN existing_user=$(getent passwd ${USER_UID} | cut -d: -f1 || true); \
+    existing_group=$(getent group ${USER_GID} | cut -d: -f1 || true); \
+    [ -n "$existing_user" ] && deluser "$existing_user" 2>/dev/null || true; \
+    [ -n "$existing_group" ] && delgroup "$existing_group" 2>/dev/null || true; \
+    addgroup -g ${USER_GID} telepi \
+    && adduser -D -u ${USER_UID} -G telepi telepi \
+    && mkdir -p /workspace /home/telepi/.pi/agent /home/telepi/.npm-global \
+    && chown -R telepi:telepi /workspace /home/telepi
 
 USER telepi
 
