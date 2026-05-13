@@ -46,6 +46,47 @@ describe("createTelegramUIContext", () => {
     expect(() => ui.setHiddenThinkingLabel()).not.toThrow();
   });
 
+  it("provides safe defaults for terminal-only UI state", () => {
+    const ui = createTelegramUIContext({ notify: vi.fn() });
+
+    expect(() => ui.onTerminalInput(() => undefined)()).not.toThrow();
+    expect(() => ui.setStatus("Ready")).not.toThrow();
+    expect(() => ui.setWorkingMessage("Working")).not.toThrow();
+    expect(() => ui.setWidget(undefined)).not.toThrow();
+    expect(() => ui.setFooter(undefined)).not.toThrow();
+    expect(() => ui.setHeader(undefined)).not.toThrow();
+    expect(() => ui.setTitle("Title")).not.toThrow();
+    expect(() => ui.pasteToEditor("text")).not.toThrow();
+    expect(() => ui.setEditorText("text")).not.toThrow();
+    expect(() => ui.setEditorComponent(undefined)).not.toThrow();
+    expect(() => ui.setToolsExpanded(true)).not.toThrow();
+    expect(() => ui.setWorkingVisible(true)).not.toThrow();
+    expect(() => ui.setWorkingIndicator("spinner")).not.toThrow();
+    expect(ui.getEditorText()).toBe("");
+    expect(ui.getAllThemes()).toEqual([]);
+    expect(ui.getTheme()).toBeUndefined();
+    expect(ui.setTheme("default")).toEqual({
+      success: false,
+      error: "TelePi does not support theme switching through extension UI.",
+    });
+    expect(ui.getToolsExpanded()).toBe(false);
+    expect(ui.getEditorComponent()).toBeUndefined();
+  });
+
+  it("fails clearly for unsupported terminal-only UI methods", async () => {
+    const ui = createTelegramUIContext({ notify: vi.fn() });
+
+    await expect(ui.custom({} as never)).rejects.toThrow(
+      "TelePi does not yet support extension UI method 'custom'.",
+    );
+    await expect(ui.editor({} as never)).rejects.toThrow(
+      "TelePi does not yet support extension UI method 'editor'.",
+    );
+    expect(() => ui.addAutocompleteProvider({} as never)).toThrow(
+      "TelePi does not yet support extension UI method 'addAutocompleteProvider'.",
+    );
+  });
+
   it("provides a plain-text theme shim for extension compatibility", () => {
     const ui = createTelegramUIContext({ notify: vi.fn() });
 
