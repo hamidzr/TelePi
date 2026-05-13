@@ -65,7 +65,7 @@ This is the main install path for TelePi.
    Notes:
    - `TELEPI_WORKSPACE` is strongly recommended in installed mode so fresh Telegram sessions start in the right project
    - `PI_SESSION_PATH` is usually injected automatically by `/handoff`
-   - `OPENAI_API_KEY`, `SHERPA_ONNX_MODEL_DIR`, `PI_MODEL`, and `TOOL_VERBOSITY` are optional
+   - `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, `SHERPA_ONNX_MODEL_DIR`, `PI_MODEL`, and `TOOL_VERBOSITY` are optional
 4. Verify the install:
    ```bash
    telepi status
