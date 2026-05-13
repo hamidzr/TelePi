@@ -76,6 +76,50 @@ describe("launchd install helpers", () => {
     });
   });
 
+  it("reports launchd status as unavailable off macOS", () => {
+    writeFileSync(context.launchAgentPath, "plist");
+    Object.defineProperty(process, "platform", { value: "linux", configurable: true });
+
+    expect(getLaunchAgentStatus(context)).toEqual({
+      plistExists: true,
+      loaded: false,
+      state: undefined,
+      pid: undefined,
+      detail: "launchd unavailable on this platform",
+      error: undefined,
+    });
+  });
+
+  it("reports launchd status domain and command errors", () => {
+    expect(getLaunchAgentStatus({
+      ...context,
+      launchAgentServiceTarget: undefined,
+    })).toEqual({
+      plistExists: false,
+      loaded: false,
+      state: undefined,
+      pid: undefined,
+      detail: "launchd domain unavailable",
+      error: "Could not determine the current user launchd domain.",
+    });
+
+    mockState.spawnSync.mockReturnValueOnce({
+      status: null,
+      stdout: "",
+      stderr: "",
+      error: new Error("launchctl missing"),
+    });
+
+    expect(getLaunchAgentStatus(context)).toEqual({
+      plistExists: false,
+      loaded: false,
+      state: undefined,
+      pid: undefined,
+      detail: "launchctl unavailable",
+      error: "launchctl missing",
+    });
+  });
+
   it("reconciles launchd successfully", () => {
     mockState.spawnSync
       .mockReturnValueOnce({ status: 0, stdout: "", stderr: "", error: undefined })
