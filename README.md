@@ -374,7 +374,7 @@ This means hand-off is lossless — no context is dropped regardless of how many
 
 TelePi discovers sessions from **all** project workspaces stored under `~/.pi/agent/sessions/`. This means:
 
-- **`/sessions`** shows sessions from every project (OpenClawd, homepage, TelePi, etc.), grouped by workspace
+- **`/sessions`** shows sessions from every project (OpenClaw, homepage, TelePi, etc.), grouped by workspace
 - **`/new`** shows a workspace picker when multiple workspaces are known, so you can start a new session in any project
 - **Switching sessions** automatically updates the workspace — coding tools are re-scoped to the correct project directory
 
