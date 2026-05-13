@@ -480,6 +480,7 @@ The compose file:
 - Mounts `~/.pi/agent` read-only (for auth and settings)
 - Mounts `~/.pi/agent/sessions` read-write (for session persistence)
 - Mounts your workspace directory read-write
+- Passes `OPENROUTER_API_KEY` through when set for Pi model providers
 - Runs as non-root, drops capabilities, enables `no-new-privileges`
 
 ## Security Notes
