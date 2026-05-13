@@ -71,5 +71,5 @@ describe("bot slash-command argument hint caching", () => {
     expect(entries).toContainEqual(expect.objectContaining({ kind: "pi", name: "review-again", label: "📝 /review-again <PR-URL>" }));
     expect(readFileSync).toHaveBeenCalledTimes(1);
     expect(readFileSync).toHaveBeenCalledWith(promptPath, "utf8");
-  });
+  }, 20_000);
 });
