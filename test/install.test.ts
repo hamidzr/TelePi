@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -10,6 +10,7 @@ import {
   resolveTelePiInstallContext,
   setupTelePi,
 } from "../src/install.js";
+import { installExtension } from "../src/install/extension.js";
 
 describe("install helpers", () => {
   const originalCwd = process.cwd();
@@ -348,6 +349,22 @@ describe("install helpers", () => {
     expect(customLinkStatus.extension.mode).toBe("custom");
     expect(customLinkStatus.extension.detail).toBe("symlinked elsewhere");
     expect(customLinkStatus.extension.targetPath).toBe(otherTarget);
+  });
+
+  it("installs the handoff extension as a symlink and reuses it", () => {
+    const cliModuleUrl = pathToFileURL(path.join(packageRoot, "dist", "cli.js")).href;
+    const context = resolveTelePiInstallContext(cliModuleUrl);
+
+    mkdirSync(path.dirname(context.extensionDestinationPath), { recursive: true });
+
+    expect(installExtension(context)).toBe("symlink");
+    expect(lstatSync(context.extensionDestinationPath).isSymbolicLink()).toBe(true);
+    expect(path.resolve(
+      path.dirname(context.extensionDestinationPath),
+      readlinkSync(context.extensionDestinationPath),
+    )).toBe(context.extensionSourcePath);
+
+    expect(installExtension(context)).toBe("symlink");
   });
 
   it("reports the installed extension as a copy when the destination matches the source file", () => {
