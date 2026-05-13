@@ -276,8 +276,6 @@ const mockState = vi.hoisted(() => {
     return runtime;
   });
 
-  const createCodingTools = vi.fn().mockReturnValue(["mock-tool"]);
-
   const AuthStorage = {
     create: vi.fn().mockReturnValue({ kind: "auth-storage" }),
   };
@@ -329,7 +327,6 @@ const mockState = vi.hoisted(() => {
     createAgentSession,
     createAgentSessionRuntime,
     createAgentSessionServices,
-    createCodingTools,
     AuthStorage,
     ModelRegistry,
     SessionManager,
@@ -357,7 +354,6 @@ const mockState = vi.hoisted(() => {
       createAgentSession.mockClear();
       createAgentSessionRuntime.mockClear();
       createAgentSessionServices.mockClear();
-      createCodingTools.mockClear();
       AuthStorage.create.mockClear();
       ModelRegistry.create.mockClear();
       SessionManager.create.mockClear();
@@ -380,7 +376,6 @@ vi.mock("@mariozechner/pi-coding-agent", () => ({
   createAgentSessionFromServices: mockState.createAgentSession,
   createAgentSessionRuntime: mockState.createAgentSessionRuntime,
   createAgentSessionServices: mockState.createAgentSessionServices,
-  createCodingTools: mockState.createCodingTools,
   AuthStorage: mockState.AuthStorage,
   ModelRegistry: mockState.ModelRegistry,
   SessionManager: mockState.SessionManager,
@@ -437,7 +432,6 @@ describe("PiSessionService", () => {
         authStorage: { kind: "auth-storage" },
       }),
     );
-    expect(mockState.createCodingTools).not.toHaveBeenCalled();
     expect(mockState.createAgentSession).toHaveBeenCalledWith(
       expect.objectContaining({
         services: expect.objectContaining({ cwd: "/workspace/base" }),

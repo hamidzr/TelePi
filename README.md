@@ -486,7 +486,7 @@ The compose file:
 ## Security Notes
 
 - Only Telegram user IDs in `TELEGRAM_ALLOWED_USER_IDS` can interact with the bot
-- Pi tools are scoped to the workspace via `createCodingTools(workspace)` and re-scoped on session switch
+- Pi runtime services are created with the active workspace and refreshed on session switch
 - The `/handoff` extension only shuts down Pi CLI if TelePi launches or restarts successfully
 - URL sanitization blocks `javascript:` and other unsafe protocols in formatted output
 - Shell commands in `/handback` use `spawnSync` (no shell interpretation) for clipboard copy
