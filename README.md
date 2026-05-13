@@ -481,6 +481,7 @@ The compose file:
 - Mounts `~/.pi/agent/sessions` read-write (for session persistence)
 - Mounts your workspace directory read-write
 - Passes `OPENROUTER_API_KEY` through when set for Pi model providers
+- Forwards `SSH_AUTH_SOCK` so Pi can use the host ssh-agent for git over SSH
 - Runs as non-root, drops capabilities, enables `no-new-privileges`
 
 ## Security Notes
