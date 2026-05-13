@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { vi } from "vitest";
@@ -12,11 +12,13 @@ vi.mock("node:child_process", () => ({
 }));
 
 import {
+  buildLaunchAgentPlist,
   getInstalledConfigStatus,
   getLaunchAgentStatus,
   readLaunchAgentEnvironmentVariables,
   readLaunchAgentWorkingDirectory,
   reconcileLaunchAgent,
+  writeLaunchAgentPlist,
 } from "../../src/install/launchd.js";
 import type { TelePiInstallContext } from "../../src/install/shared.js";
 
@@ -35,6 +37,38 @@ describe("launchd install helpers", () => {
   afterEach(() => {
     Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true });
     rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it("renders and writes launchd plists idempotently", () => {
+    mkdirSync(path.dirname(context.launchdTemplatePath), { recursive: true });
+    writeFileSync(
+      context.launchdTemplatePath,
+      [
+        "<plist>",
+        "/ABSOLUTE/PATH/TO/WORKDIR",
+        "/ABSOLUTE/PATH/TO/node",
+        "/ABSOLUTE/PATH/TO/TelePi/dist/cli.js",
+        "__TELEPI_PATH_ENV_BLOCK__",
+        "/ABSOLUTE/PATH/TO/telepi.out.log",
+        "/ABSOLUTE/PATH/TO/telepi.err.log",
+        "</plist>",
+      ].join("\n"),
+    );
+    const escapedContext = {
+      ...context,
+      workingDirectory: "/tmp/work & space",
+      pathEnvironment: "/bin:/usr/bin",
+    };
+
+    const plist = buildLaunchAgentPlist(escapedContext);
+
+    expect(plist).toContain("/tmp/work &amp; space");
+    expect(plist).toContain("<key>TELEPI_CONFIG</key>");
+    expect(plist).toContain("<key>PATH</key>");
+    expect(plist).not.toContain("__TELEPI_PATH_ENV_BLOCK__");
+    expect(writeLaunchAgentPlist(escapedContext)).toBe(true);
+    expect(writeLaunchAgentPlist(escapedContext)).toBe(false);
+    expect(readFileSync(context.launchAgentPath, "utf8")).toBe(plist);
   });
 
   it("parses loaded launchd status output", () => {
