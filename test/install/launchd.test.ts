@@ -12,6 +12,7 @@ vi.mock("node:child_process", () => ({
 }));
 
 import {
+  getInstalledConfigStatus,
   getLaunchAgentStatus,
   readLaunchAgentEnvironmentVariables,
   readLaunchAgentWorkingDirectory,
@@ -103,6 +104,58 @@ describe("launchd install helpers", () => {
     expect(reconcileLaunchAgent(context)).toEqual({
       actions: [`bootout ${context.launchAgentDomain} ${context.launchAgentPath}`],
       warning: "launchctl bootstrap failed: bootstrap failed",
+    });
+  });
+
+  it("resolves installed config status without a launch agent plist", () => {
+    expect(getInstalledConfigStatus(context)).toEqual({
+      resolvedPath: context.configPath,
+      source: "installed-default",
+    });
+  });
+
+  it("resolves installed config status from launchd working-directory env", () => {
+    const workingDirectory = path.join(tempDir, "work");
+    mkdirSync(workingDirectory, { recursive: true });
+    const localConfigPath = path.join(workingDirectory, ".env");
+    writeFileSync(localConfigPath, "TELEGRAM_BOT_TOKEN=test\n");
+    writeFileSync(
+      context.launchAgentPath,
+      [
+        "<plist>",
+        "<key>WorkingDirectory</key>",
+        `<string>${workingDirectory}</string>`,
+        "</plist>",
+      ].join("\n"),
+    );
+
+    expect(getInstalledConfigStatus(context)).toEqual({
+      resolvedPath: localConfigPath,
+      source: "launchd-cwd",
+    });
+  });
+
+  it("resolves explicit launchd TELEPI_CONFIG relative to working directory", () => {
+    const workingDirectory = path.join(tempDir, "work");
+    mkdirSync(workingDirectory, { recursive: true });
+    writeFileSync(
+      context.launchAgentPath,
+      [
+        "<plist>",
+        "<key>WorkingDirectory</key>",
+        `<string>${workingDirectory}</string>`,
+        "<key>EnvironmentVariables</key>",
+        "<dict>",
+        "<key>TELEPI_CONFIG</key>",
+        "<string>config/telepi.env</string>",
+        "</dict>",
+        "</plist>",
+      ].join("\n"),
+    );
+
+    expect(getInstalledConfigStatus(context)).toEqual({
+      resolvedPath: path.join(workingDirectory, "config", "telepi.env"),
+      source: "launchd-env",
     });
   });
 
