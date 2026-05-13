@@ -1368,7 +1368,7 @@ describe("createBot", () => {
     await pending;
   });
 
-  it("shows scoped models by default, can expand to all models, and handles model selection", async () => {
+  it("shows scoped models by default and handles model selection", async () => {
     const scopedModels = [
       {
         provider: "github-copilot",
@@ -1378,48 +1378,26 @@ describe("createBot", () => {
         thinkingLevel: "high",
       },
     ];
-    const allModels = [
-      {
-        provider: "openai",
-        id: "codex",
-        name: "Codex",
-        current: false,
-      },
-      ...scopedModels,
-    ];
-    const listModels = vi.fn().mockImplementation((showAll?: boolean) =>
-      Promise.resolve(showAll ? allModels : scopedModels),
-    );
+    const listModels = vi.fn().mockResolvedValue(scopedModels);
 
     const { bot, pi, api } = setupBot({
       piSessionOverrides: {
         listModels,
-        setModel: vi.fn().mockResolvedValue("openai/codex"),
+        setModel: vi.fn().mockResolvedValue("github-copilot/codex"),
       },
     });
 
     await bot.handleUpdate(createTestUpdate({ message: { text: "/model" } }));
     expect(api.sendMessage.mock.calls[0]?.[1]).toContain("Select a model");
-    expect(api.sendMessage.mock.calls[0]?.[1]).toContain("Showing the current Pi model scope.");
-    expect(getReplyMarkupData(api)).toEqual(["model_0", "model_show_all"]);
+    expect(getReplyMarkupData(api)).toEqual(["model_0"]);
     expect(getReplyMarkupTexts(api)).toEqual([
       "✅ github-copilot/codex · Codex : high",
-      "Show all models",
     ]);
-    expect(listModels).toHaveBeenNthCalledWith(1, false);
-    expect(listModels).toHaveBeenNthCalledWith(2, true);
-
-    await bot.handleUpdate(createCallbackUpdate("model_show_all"));
-    expect(api.answerCallbackQuery).toHaveBeenCalledWith("cb_1", { text: "Loading all models..." });
-    expect(getEditedReplyMarkupData(api)).toEqual(["model_0", "model_1"]);
-    expect(getEditedReplyMarkupTexts(api)).toEqual([
-      "openai/codex · Codex",
-      "✅ github-copilot/codex · Codex : high",
-    ]);
+    expect(listModels).toHaveBeenCalledWith(false);
 
     await bot.handleUpdate(createCallbackUpdate("model_0"));
     expect(api.answerCallbackQuery).toHaveBeenCalledWith("cb_1", { text: "Switching model..." });
-    expect(pi.service.setModel).toHaveBeenCalledWith("openai", "codex", undefined);
+    expect(pi.service.setModel).toHaveBeenCalledWith("github-copilot", "codex", "high");
     expect(api.editMessageText).toHaveBeenCalled();
   });
 
@@ -1445,25 +1423,14 @@ describe("createBot", () => {
     expect(pi.service.setModel).toHaveBeenCalledWith("github-copilot", "codex", "high");
   });
 
-  it("keeps the show-all button while paging through scoped models", async () => {
+  it("paginates scoped models", async () => {
     const scopedModels = Array.from({ length: 7 }, (_, index) => ({
       provider: "github-copilot",
       id: `codex-${index}`,
       name: `Codex ${index}`,
       current: index === 0,
     }));
-    const allModels = [
-      ...Array.from({ length: 2 }, (_, index) => ({
-        provider: "openai",
-        id: `gpt-${index}`,
-        name: `GPT ${index}`,
-        current: false,
-      })),
-      ...scopedModels,
-    ];
-    const listModels = vi.fn().mockImplementation((showAll?: boolean) =>
-      Promise.resolve(showAll ? allModels : scopedModels),
-    );
+    const listModels = vi.fn().mockResolvedValue(scopedModels);
 
     const { bot, api } = setupBot({
       piSessionOverrides: {
@@ -1481,7 +1448,6 @@ describe("createBot", () => {
       "model_5",
       "noop_page",
       "model_page_1",
-      "model_show_all",
     ]);
 
     await bot.handleUpdate(createCallbackUpdate("model_page_1"));
@@ -1489,7 +1455,6 @@ describe("createBot", () => {
       "model_6",
       "model_page_0",
       "noop_page",
-      "model_show_all",
     ]);
   });
 

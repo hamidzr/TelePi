@@ -761,6 +761,10 @@ export function createBot(config: TelePiConfig, sessionRegistry: PiSessionRegist
     }
   });
 
+  bot.callbackQuery("model_show_all", async (ctx) => {
+    await ctx.answerCallbackQuery({ text: "Expired, run /model again" });
+  });
+
   bot.callbackQuery(/^newws_(\d+)$/, async (ctx) => {
     const target = getTelegramTarget(ctx);
     const messageId = ctx.callbackQuery.message?.message_id;
