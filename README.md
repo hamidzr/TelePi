@@ -524,6 +524,8 @@ The detailed module map, testing layout, and remaining large hotspots are docume
 npm install
 npm run dev            # Run with tsx (auto-loads .env)
 npm run build          # TypeScript compilation
+npm run check          # TypeScript check without emitting dist
+npm run lint           # Alias for npm run check
 npm run build:clean    # Clean dist/ and rebuild
 npm test               # Run tests
 npm run test:coverage  # Run tests with coverage report
