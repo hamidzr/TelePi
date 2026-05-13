@@ -304,6 +304,16 @@ describe("install helpers", () => {
     expect(status.configSource).toBe("launchd-env");
   });
 
+  it("reports a missing installed extension", () => {
+    const cliModuleUrl = pathToFileURL(path.join(packageRoot, "dist", "cli.js")).href;
+
+    const status = getTelePiStatus(cliModuleUrl);
+
+    expect(status.extension.exists).toBe(false);
+    expect(status.extension.mode).toBe("missing");
+    expect(status.extension.detail).toBe("missing");
+  });
+
   it("reports the installed extension as a symlink when it points to the package source", () => {
     const cliModuleUrl = pathToFileURL(path.join(packageRoot, "dist", "cli.js")).href;
     const context = resolveTelePiInstallContext(cliModuleUrl);
@@ -316,6 +326,28 @@ describe("install helpers", () => {
     expect(status.extension.exists).toBe(true);
     expect(status.extension.mode).toBe("symlink");
     expect(status.extension.targetPath).toBe(context.extensionSourcePath);
+  });
+
+  it("reports custom installed extension files and symlinks", () => {
+    const cliModuleUrl = pathToFileURL(path.join(packageRoot, "dist", "cli.js")).href;
+    const context = resolveTelePiInstallContext(cliModuleUrl);
+
+    mkdirSync(path.dirname(context.extensionDestinationPath), { recursive: true });
+    writeFileSync(context.extensionDestinationPath, "custom extension\n");
+
+    const customFileStatus = getTelePiStatus(cliModuleUrl);
+    expect(customFileStatus.extension.mode).toBe("custom");
+    expect(customFileStatus.extension.detail).toBe("custom file");
+
+    rmSync(context.extensionDestinationPath);
+    const otherTarget = path.join(tempDir, "other-extension.ts");
+    writeFileSync(otherTarget, "export default {};\n");
+    symlinkSync(otherTarget, context.extensionDestinationPath);
+
+    const customLinkStatus = getTelePiStatus(cliModuleUrl);
+    expect(customLinkStatus.extension.mode).toBe("custom");
+    expect(customLinkStatus.extension.detail).toBe("symlinked elsewhere");
+    expect(customLinkStatus.extension.targetPath).toBe(otherTarget);
   });
 
   it("reports the installed extension as a copy when the destination matches the source file", () => {
