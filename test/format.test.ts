@@ -30,6 +30,10 @@ describe("formatTelegramHTML", () => {
     );
   });
 
+  it("leaves multiline inline code markers untouched", () => {
+    expect(formatTelegramHTML("Use `line\nbreak` now")).toBe("Use `line\nbreak` now");
+  });
+
   it("formats bold and italic markers", () => {
     expect(formatTelegramHTML("**bold** _italics_ *also italics*")).toBe(
       "<b>bold</b> <i>italics</i> <i>also italics</i>",
@@ -39,6 +43,9 @@ describe("formatTelegramHTML", () => {
   it("formats links and sanitizes unsafe URLs", () => {
     expect(formatTelegramHTML("[safe](https://example.com) [mail](mailto:test@example.com)")).toBe(
       '<a href="https://example.com">safe</a> <a href="mailto:test@example.com">mail</a>',
+    );
+    expect(formatTelegramHTML('[quoted](https://exa"mple.com)')).toBe(
+      '<a href="https://exa%22mple.com">quoted</a>',
     );
     expect(formatTelegramHTML("[bad](javascript:alert(1))")).toBe('<a href="#">bad</a>)');
   });
