@@ -96,6 +96,59 @@ describe("telepi CLI", () => {
     expect(logSpy.mock.calls.some((call) => String(call[0]).includes("TelePi CLI"))).toBe(true);
   });
 
+  it("prints setup unchanged state and launchd warnings", async () => {
+    mockState.setupTelePi.mockResolvedValueOnce({
+      context: {
+        version: "1.2.3",
+        configPath: "/tmp/config.env",
+        launchAgentPath: "/tmp/com.telepi.plist",
+        extensionDestinationPath: "/tmp/telepi-handoff.ts",
+      },
+      configCreated: false,
+      configUpdated: false,
+      launchAgentUpdated: false,
+      extensionInstalledAs: "copy",
+      launchdActions: [],
+      launchdWarning: "launchctl unavailable",
+    });
+
+    await runSetupCommand([]);
+
+    expect(logSpy).toHaveBeenCalledWith("Config: /tmp/config.env (unchanged)");
+    expect(logSpy).toHaveBeenCalledWith("LaunchAgent: /tmp/com.telepi.plist (unchanged)");
+    expect(warnSpy).toHaveBeenCalledWith("launchd warning: launchctl unavailable");
+  });
+
+  it("prints unloaded status details", () => {
+    mockState.getTelePiStatus.mockReturnValueOnce({
+      version: "1.2.3",
+      resolvedConfigPath: "/tmp/config.env",
+      configExists: false,
+      configSource: "launchd-env",
+      launchAgent: {
+        loaded: false,
+        state: undefined,
+        pid: undefined,
+        detail: "not loaded",
+        plistExists: false,
+        error: "launchctl failed",
+      },
+      extension: {
+        mode: "copy",
+        detail: "installed as copy",
+        targetPath: undefined,
+      },
+    });
+
+    runStatusCommand();
+
+    expect(logSpy).toHaveBeenCalledWith("Config path: /tmp/config.env [launchd TELEPI_CONFIG]");
+    expect(logSpy).toHaveBeenCalledWith("Config exists: no");
+    expect(logSpy).toHaveBeenCalledWith("launchd: not loaded (plist missing)");
+    expect(logSpy).toHaveBeenCalledWith("launchd detail: launchctl failed");
+    expect(logSpy).toHaveBeenCalledWith("Extension: installed as copy");
+  });
+
   it("validates unexpected arguments and unknown commands", async () => {
     expect(() => ensureNoArguments("status", ["extra"])).toThrow("Unexpected arguments for status: extra");
     await expect(runSetupCommand(["token"]))
