@@ -95,6 +95,39 @@ describe("launchd install helpers", () => {
     });
   });
 
+  it("returns launchd platform and domain warnings before running launchctl", () => {
+    Object.defineProperty(process, "platform", { value: "linux", configurable: true });
+    expect(reconcileLaunchAgent(context)).toEqual({
+      actions: [],
+      warning: "launchd is only available on macOS.",
+    });
+
+    Object.defineProperty(process, "platform", { value: "darwin", configurable: true });
+    expect(reconcileLaunchAgent({
+      ...context,
+      launchAgentDomain: undefined,
+      launchAgentServiceTarget: undefined,
+    })).toEqual({
+      actions: [],
+      warning: "Could not determine the current user launchd domain. Load the agent manually with launchctl bootstrap.",
+    });
+    expect(mockState.spawnSync).not.toHaveBeenCalled();
+  });
+
+  it("returns launchctl availability warnings", () => {
+    mockState.spawnSync.mockReturnValueOnce({
+      status: null,
+      stdout: "",
+      stderr: "",
+      error: new Error("missing launchctl"),
+    });
+
+    expect(reconcileLaunchAgent(context)).toEqual({
+      actions: [],
+      warning: "launchctl is unavailable: missing launchctl",
+    });
+  });
+
   it("returns bootstrap failures as warnings", () => {
     mockState.spawnSync
       .mockReturnValueOnce({ status: 0, stdout: "", stderr: "", error: undefined })
@@ -104,6 +137,23 @@ describe("launchd install helpers", () => {
     expect(reconcileLaunchAgent(context)).toEqual({
       actions: [`bootout ${context.launchAgentDomain} ${context.launchAgentPath}`],
       warning: "launchctl bootstrap failed: bootstrap failed",
+    });
+  });
+
+  it("returns kickstart failures as warnings", () => {
+    mockState.spawnSync
+      .mockReturnValueOnce({ status: 0, stdout: "", stderr: "", error: undefined })
+      .mockReturnValueOnce({ status: 0, stdout: "", stderr: "", error: undefined })
+      .mockReturnValueOnce({ status: 0, stdout: "", stderr: "", error: undefined })
+      .mockReturnValueOnce({ status: 1, stdout: "", stderr: "", error: undefined })
+      .mockReturnValueOnce({ status: 5, stdout: "kickstart failed\n", stderr: "", error: undefined });
+
+    expect(reconcileLaunchAgent(context)).toEqual({
+      actions: [
+        `bootout ${context.launchAgentDomain} ${context.launchAgentPath}`,
+        `bootstrap ${context.launchAgentDomain} ${context.launchAgentPath}`,
+      ],
+      warning: "launchctl kickstart failed: kickstart failed",
     });
   });
 
